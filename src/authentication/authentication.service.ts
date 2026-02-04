@@ -7,6 +7,7 @@ import { PostgresErrorCode } from "../database/postgresErrorCodes.enum";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { TokenPayLoad } from "./interface/tokenPayload.interface";
+
 @Injectable()
 export class AuthenticationService {
     constructor(
@@ -34,7 +35,7 @@ export class AuthenticationService {
     public async getAuthenticatedUser(email: string, hashedPassword: string){
         try{
             const user = await this.usersService.getByEmail(email);
-            await this.verifyPassword(hashedPassword, user.password);            user.password = undefined;
+            await this.verifyPassword(hashedPassword, user.password);
             user.password = undefined;
             return user;
         } catch (error){
@@ -51,5 +52,9 @@ export class AuthenticationService {
         const payload: TokenPayLoad = { userId };
         const token = this.jwtService.sign(payload);
         return `Authentication=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get('JWT_EXPIRATION_TIME')}`;
+    }
+
+    public getCookieForLogOut(){
+        return `Authentication=; HttpOnly; Path=/; Max-Age=0`;
     }
 }

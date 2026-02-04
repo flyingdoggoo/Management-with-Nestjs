@@ -2,11 +2,17 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PostsModule } from './posts/posts.module';
+import { UsersModule } from './users/users.module';
+import { AuthenticationModule } from './authentication/authentication.module';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
-import * as Joi from '@hapi/joi';
+import { ExceptionsLoggerFilter } from './ultis/exceptionsLogger.filter';
+import { APP_FILTER } from '@nestjs/core';
+import Joi from '@hapi/joi';
 @Module({
-  imports: [PostsModule, ConfigModule.forRoot({
+  imports: [PostsModule, UsersModule, AuthenticationModule,
+    ConfigModule.forRoot({
+    isGlobal: true,
     validationSchema: Joi.object({
       POSTGRES_HOST: Joi.string().required(),
       POSTGRES_PORT: Joi.number().required(),
@@ -21,6 +27,9 @@ import * as Joi from '@hapi/joi';
     DatabaseModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, {
+    provide: APP_FILTER,
+    useClass: ExceptionsLoggerFilter,
+  },],
 })
 export class AppModule { }
