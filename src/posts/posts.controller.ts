@@ -1,9 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, UseInterceptors } from '@nestjs/common';
 import PostsService from './posts.service';
 import { CreatePostDto, UpdatePostDto } from './dto';
 import { JwtAuthenticationGuard } from 'src/authentication/jwtAuthentication.guard';
+import { FindOneParams } from 'src/ultis/findOneParams';
+import { ExcludeNullInterceptor } from 'src/ultis/excludeNull.interceptor';
 
 @Controller('posts')
+@UseInterceptors(ExcludeNullInterceptor)
 export default class PostsController {
     constructor(
         private readonly postsService: PostsService,
@@ -16,7 +19,7 @@ export default class PostsController {
     }
 
     @Get(':id')
-    getPostById(@Param('id') id: string) {
+    getPostById(@Param() { id }: FindOneParams) {
         return this.postsService.getPostById(Number(id));
     }
 
@@ -27,12 +30,12 @@ export default class PostsController {
     }
 
     @Put(':id')
-    async updatePost(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
+    async updatePost(@Param() { id }: FindOneParams, @Body() updatePostDto: UpdatePostDto) {
         return this.postsService.updatePost(Number(id), updatePostDto);
     }
 
     @Delete(':id')
-    async deletePost(@Param('id') id: string) {
+    async deletePost(@Param() { id }: FindOneParams) {
         return this.postsService.deletePost(Number(id));
     }
 }
