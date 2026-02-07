@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards, UseInterceptors } from '@nestjs/common';
 import PostsService from './posts.service';
 import { CreatePostDto, UpdatePostDto } from './dto';
 import { JwtAuthenticationGuard } from 'src/authentication/jwtAuthentication.guard';
 import { FindOneParams } from 'src/ultis/findOneParams';
 import { ExcludeNullInterceptor } from 'src/ultis/excludeNull.interceptor';
+import type RequestWithUser from 'src/authentication/interface/requestWithUser.interface';
 
 @Controller('posts')
 @UseInterceptors(ExcludeNullInterceptor)
@@ -25,8 +26,8 @@ export default class PostsController {
 
     @Post()
     @UseGuards(JwtAuthenticationGuard)
-    async createPost(@Body() createPostDto : CreatePostDto) {
-        return this.postsService.createPost(createPostDto);
+    async createPost(@Body() createPostDto : CreatePostDto, @Req() req: RequestWithUser) {
+        return this.postsService.createPost(createPostDto, req.user);
     }
 
     @Put(':id')
