@@ -1,31 +1,60 @@
-version: "3"
+version: "3.8"
+
 services:
   postgres:
     container_name: postgres
     image: postgres:latest
     ports:
-    - "5432:5432"
+      - "5432:5432"
     volumes:
-    - /data/postgres:/data/postgres
+      - /data/postgres:/data/postgres
     env_file:
-    - docker.env
+      - docker.env
     networks:
-    - postgres
- 
+      - postgres
+
   pgadmin:
-    links:
-    - postgres:postgres
     container_name: pgadmin
     image: dpage/pgadmin4
+    depends_on:
+      - postgres
     ports:
-    - "8080:80"
+      - "8080:80"
     volumes:
-    - /data/pgadmin:/root/.pgadmin
+      - /data/pgadmin:/root/.pgadmin
     env_file:
-    - docker.env
+      - docker.env
     networks:
-    - postgres
- 
+      - postgres
+
+  es01:
+    container_name: es01
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    environment:
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data01:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - elastic
+
+volumes:
+  data01:
+    driver: local
+
 networks:
   postgres:
+    driver: bridge
+  elastic:
     driver: bridge

@@ -1,13 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards, UseInterceptors, Query } from '@nestjs/common';
 import PostsService from './posts.service';
-import { CreatePostDto, UpdatePostDto } from './dto';
+import { CreatePostDto, UpdatePostDto, SearchPostDto } from './dto';
 import { JwtAuthenticationGuard } from 'src/authentication/jwtAuthentication.guard';
 import { FindOneParams } from 'src/ultis/findOneParams';
 import { ExcludeNullInterceptor } from 'src/ultis/excludeNull.interceptor';
 import type RequestWithUser from 'src/authentication/interface/requestWithUser.interface';
 
 @Controller('posts')
-@UseInterceptors(ExcludeNullInterceptor)
+// @UseInterceptors(ExcludeNullInterceptor)
 export default class PostsController {
     constructor(
         private readonly postsService: PostsService,
@@ -18,7 +18,11 @@ export default class PostsController {
     getAllPosts() {
         return this.postsService.getAllPosts();
     }
-
+    @Get('search')
+    @UseGuards(JwtAuthenticationGuard)
+    searchPosts(@Query() dto: SearchPostDto) {
+        return this.postsService.searchPosts(dto);
+    }
     @Get(':id')
     getPostById(@Param() { id }: FindOneParams) {
         return this.postsService.getPostById(Number(id));

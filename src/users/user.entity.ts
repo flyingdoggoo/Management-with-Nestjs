@@ -1,5 +1,6 @@
 import { Expose } from 'class-transformer';
 import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { Address } from './address.entity';
 import Post from '../posts/post.entity';
 import PublicFile from '../files/publicFile.entity';
@@ -16,6 +17,7 @@ class User{
     @Column()
     public name: string;
 
+    @Exclude()
     @Column()
     public password: string;    
 

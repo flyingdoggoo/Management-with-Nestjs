@@ -2,12 +2,14 @@ import { Column, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColum
 import { Transform } from 'class-transformer';
 import User from '../users/user.entity';
 import Category from '../categories/categories.entity';
+import { Exclude } from 'class-transformer';
 @Entity()
 class Post {
     @PrimaryGeneratedColumn()
     public id: number;
 
     @Column()
+    @Exclude()
     public title: string;
 
     @Column({ nullable: true })
