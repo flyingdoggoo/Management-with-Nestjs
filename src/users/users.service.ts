@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto} from './dto';
 import { FilesService } from '../files/files.service';
+import bcrypt from 'bcrypt';
 @Injectable()
 export default class UsersService {
     constructor(
@@ -12,6 +13,12 @@ export default class UsersService {
         private readonly filesService: FilesService,
     ) {}
 
+    async setCurrentRefreshToken(refreshToken: string, userId: number){
+        const hashRefreshToken = await bcrypt.hash(refreshToken, 10);
+        await this.userRepository.update(userId, {
+            refreshToken: hashRefreshToken,
+        });
+    }
     async getByEmail(email: string){
         const user = await this.userRepository.findOne({ where: { email } });
         if(user){
@@ -72,5 +79,23 @@ export default class UsersService {
 
     async getAllUsers(){
         return this.userRepository.find();
+    }
+
+    async getUserIfRefreshTokenMatches(refreshToken: string, userId: number){
+        const user = await this.getById(userId);
+        const isRefreshTokenMatching = await bcrypt.compare(
+            refreshToken,
+            user.refreshToken,
+        );
+        if(isRefreshTokenMatching){
+            return user;
+        }
+        throw new HttpException('Refresh token does not match', HttpStatus.UNAUTHORIZED);
+    }
+
+    async removeRefreshToken(userId: number){
+        await this.userRepository.update(userId, {
+            refreshToken: null,
+        });
     }
 }

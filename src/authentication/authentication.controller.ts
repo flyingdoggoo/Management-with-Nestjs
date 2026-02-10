@@ -5,6 +5,8 @@ import { RegisterDto } from './dto/userRegister.dto';
 import { LocalAuthenticationGuard } from './localAuthentication.guard';
 import type RequestWithUser from './interface/requestWithUser.interface';
 import { JwtAuthenticationGuard } from './jwtAuthentication.guard';
+import UsersService from 'src/users/users.service';
+import JwtRefreshGuard from './jwtRefresh.guard';
 
 @Controller('authentication')
 @SerializeOptions({
@@ -12,7 +14,8 @@ import { JwtAuthenticationGuard } from './jwtAuthentication.guard';
 })
 export class AuthenticationController{
     constructor(
-        private readonly authenticationService: AuthenticationService
+        private readonly authenticationService: AuthenticationService,
+        private readonly usersService: UsersService,
     ){}
     @Post('register')
     async register(@Body() registrationData: RegisterDto){   
@@ -24,16 +27,21 @@ export class AuthenticationController{
     @Post('login')
     async login(@Req() request: RequestWithUser){        
         const { user } = request;
-        const cookie = this.authenticationService.getCookieWithJwtToken(user.id);
-        request.res.setHeader('Set-Cookie', cookie);
+        const accessTokenCookie = this.authenticationService.getCookieWithJwtAccessToken(user.id);
+        const refreshTokenCookie = this.authenticationService.getCookieWithJwtRefreshToken(user.id);
+        await this.usersService.setCurrentRefreshToken(refreshTokenCookie.token, user.id);
+        request.res.setHeader('Set-Cookie', [accessTokenCookie, refreshTokenCookie.cookie]);
         return user;
     }
     
     @UseGuards(JwtAuthenticationGuard)
     @Post('logout')
     async logout(@Req() request: RequestWithUser, @Res() response: Response){
-        const cookie = this.authenticationService.getCookieForLogOut();
-        response.setHeader('Set-Cookie', cookie);
+        await this.usersService.removeRefreshToken(request.user.id);
+        request.res.setHeader('Set-Cookie', [
+            'Authentication=; HttpOnly; Path=/; Max-Age=0',
+            'Refresh=; HttpOnly; Path=/; Max-Age=0',
+        ]);
         return response.sendStatus(200);
     }
 
@@ -42,6 +50,16 @@ export class AuthenticationController{
     authenticated(@Req() request: RequestWithUser){
         const user = request.user;
         user.password = undefined;
+        return user;
+    }
+
+    @UseGuards(JwtRefreshGuard)
+    @Get('refresh')
+    //Phương thức dưới chỉ được gọi khi refresh token hợp lệ
+    async refresh(@Req() request: RequestWithUser){
+        const user = request.user;
+        const accessTokenCookie = this.authenticationService.getCookieWithJwtAccessToken(user.id);
+        request.res.setHeader('Set-Cookie', accessTokenCookie);
         return user;
     }
 }

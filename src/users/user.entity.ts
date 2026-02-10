@@ -21,6 +21,10 @@ class User{
     @Column()
     public password: string;    
 
+    @Exclude()
+    @Column({ nullable: true })
+    public refreshToken?: string;
+
     @OneToOne(() => Address, (address) => address.user, {
         eager: true,
     })
